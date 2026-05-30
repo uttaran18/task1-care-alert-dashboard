@@ -24,6 +24,7 @@ docs/screenshot-checklist.md
 docs/walkthrough-video-outline.md
 packages/care_alerts.yaml
 themes/care_command_dark.yaml
+screenshots/          — Dashboard state captures (see submission)
 ```
 
 ## Prerequisites
