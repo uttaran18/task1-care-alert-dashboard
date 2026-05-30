@@ -3,6 +3,8 @@
 
 This folder contains a complete local Home Assistant dashboard package for Task 1 of the technical assessment.
 
+Repository: https://github.com/uttaran18/task1-care-alert-dashboard
+
 The dashboard models a care-home alert triage workflow using mock local data:
 
 ```text
