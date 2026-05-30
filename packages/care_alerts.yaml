@@ -1,0 +1,417 @@
+input_select:
+  care_selected_alert:
+    name: Care Selected Alert
+    options:
+      - none
+      - alert_001
+      - alert_002
+      - alert_003
+      - alert_004
+      - alert_005
+      - alert_006
+    initial: none
+
+  care_escalation_recipient:
+    name: Care Escalation Recipient
+    options:
+      - none
+      - Aisha Patel - Nurse Lead
+      - Ben Carter - Floor Nurse
+      - Mara Singh - Care Assistant
+      - Owen Reed - Facilities
+    initial: none
+
+  care_alert_001_status:
+    name: "Alert 001 Status"
+    options: [NEW, ACKNOWLEDGED, ESCALATED, RESOLVED]
+    initial: NEW
+
+  care_alert_002_status:
+    name: "Alert 002 Status"
+    options: [NEW, ACKNOWLEDGED, ESCALATED, RESOLVED]
+    initial: NEW
+
+  care_alert_003_status:
+    name: "Alert 003 Status"
+    options: [NEW, ACKNOWLEDGED, ESCALATED, RESOLVED]
+    initial: ACKNOWLEDGED
+
+  care_alert_004_status:
+    name: "Alert 004 Status"
+    options: [NEW, ACKNOWLEDGED, ESCALATED, RESOLVED]
+    initial: NEW
+
+  care_alert_005_status:
+    name: "Alert 005 Status"
+    options: [NEW, ACKNOWLEDGED, ESCALATED, RESOLVED]
+    initial: ESCALATED
+
+  care_alert_006_status:
+    name: "Alert 006 Status"
+    options: [NEW, ACKNOWLEDGED, ESCALATED, RESOLVED]
+    initial: NEW
+
+input_text:
+  care_alert_001_escalated_to:
+    name: "Alert 001 Escalated To"
+    initial: ""
+  care_alert_002_escalated_to:
+    name: "Alert 002 Escalated To"
+    initial: ""
+  care_alert_003_escalated_to:
+    name: "Alert 003 Escalated To"
+    initial: ""
+  care_alert_004_escalated_to:
+    name: "Alert 004 Escalated To"
+    initial: ""
+  care_alert_005_escalated_to:
+    name: "Alert 005 Escalated To"
+    initial: "Aisha Patel - Nurse Lead"
+  care_alert_006_escalated_to:
+    name: "Alert 006 Escalated To"
+    initial: ""
+
+input_datetime:
+  care_alert_001_timestamp:
+    name: "Alert 001 Timestamp"
+    has_date: true
+    has_time: true
+  care_alert_002_timestamp:
+    name: "Alert 002 Timestamp"
+    has_date: true
+    has_time: true
+  care_alert_003_timestamp:
+    name: "Alert 003 Timestamp"
+    has_date: true
+    has_time: true
+  care_alert_004_timestamp:
+    name: "Alert 004 Timestamp"
+    has_date: true
+    has_time: true
+  care_alert_005_timestamp:
+    name: "Alert 005 Timestamp"
+    has_date: true
+    has_time: true
+  care_alert_006_timestamp:
+    name: "Alert 006 Timestamp"
+    has_date: true
+    has_time: true
+
+template:
+  - sensor:
+      - name: "Care Active Alert Count"
+        unique_id: care_active_alert_count
+        state: >
+          {{ [
+            states('input_select.care_alert_001_status'),
+            states('input_select.care_alert_002_status'),
+            states('input_select.care_alert_003_status'),
+            states('input_select.care_alert_004_status'),
+            states('input_select.care_alert_005_status'),
+            states('input_select.care_alert_006_status')
+          ] | reject('eq', 'RESOLVED') | list | count }}
+
+      - name: "Care Critical Alert Count"
+        unique_id: care_critical_alert_count
+        state: >
+          {% set alerts = [
+            'sensor.care_alert_001',
+            'sensor.care_alert_002',
+            'sensor.care_alert_003',
+            'sensor.care_alert_004',
+            'sensor.care_alert_005',
+            'sensor.care_alert_006'
+          ] %}
+          {% set count = namespace(value=0) %}
+          {% for alert in alerts %}
+            {% if state_attr(alert, 'priority') == 'Critical'
+              and states(alert) != 'RESOLVED' %}
+              {% set count.value = count.value + 1 %}
+            {% endif %}
+          {% endfor %}
+          {{ count.value }}
+
+      - name: "Care Selected Alert Status"
+        unique_id: care_selected_alert_status
+        state: >
+          {% set selected = states('input_select.care_selected_alert') %}
+          {% if selected == 'none' %}
+            none
+          {% else %}
+            {{ states('input_select.care_' ~ selected ~ '_status') }}
+          {% endif %}
+
+      - name: "Care Alert 001"
+        unique_id: care_alert_001
+        state: "{{ states('input_select.care_alert_001_status') }}"
+        attributes:
+          alert_id: alert_001
+          resident: "Eleanor Hart"
+          room: "12"
+          alert_type: "Fall Detection"
+          priority: "Critical"
+          timestamp_entity: input_datetime.care_alert_001_timestamp
+          escalated_to: "{{ states('input_text.care_alert_001_escalated_to') }}"
+
+      - name: "Care Alert 002"
+        unique_id: care_alert_002
+        state: "{{ states('input_select.care_alert_002_status') }}"
+        attributes:
+          alert_id: alert_002
+          resident: "Samuel Okafor"
+          room: "18"
+          alert_type: "Call Button"
+          priority: "High"
+          timestamp_entity: input_datetime.care_alert_002_timestamp
+          escalated_to: "{{ states('input_text.care_alert_002_escalated_to') }}"
+
+      - name: "Care Alert 003"
+        unique_id: care_alert_003
+        state: "{{ states('input_select.care_alert_003_status') }}"
+        attributes:
+          alert_id: alert_003
+          resident: "Priya Desai"
+          room: "23"
+          alert_type: "Wandering Alert"
+          priority: "High"
+          timestamp_entity: input_datetime.care_alert_003_timestamp
+          escalated_to: "{{ states('input_text.care_alert_003_escalated_to') }}"
+
+      - name: "Care Alert 004"
+        unique_id: care_alert_004
+        state: "{{ states('input_select.care_alert_004_status') }}"
+        attributes:
+          alert_id: alert_004
+          resident: "George Miller"
+          room: "31"
+          alert_type: "Environmental Threshold"
+          priority: "Medium"
+          timestamp_entity: input_datetime.care_alert_004_timestamp
+          escalated_to: "{{ states('input_text.care_alert_004_escalated_to') }}"
+
+      - name: "Care Alert 005"
+        unique_id: care_alert_005
+        state: "{{ states('input_select.care_alert_005_status') }}"
+        attributes:
+          alert_id: alert_005
+          resident: "Ruth Bennett"
+          room: "37"
+          alert_type: "Call Button"
+          priority: "Low"
+          timestamp_entity: input_datetime.care_alert_005_timestamp
+          escalated_to: "{{ states('input_text.care_alert_005_escalated_to') }}"
+
+      - name: "Care Alert 006"
+        unique_id: care_alert_006
+        state: "{{ states('input_select.care_alert_006_status') }}"
+        attributes:
+          alert_id: alert_006
+          resident: "Martin Hughes"
+          room: "44"
+          alert_type: "Fall Detection"
+          priority: "Critical"
+          timestamp_entity: input_datetime.care_alert_006_timestamp
+          escalated_to: "{{ states('input_text.care_alert_006_escalated_to') }}"
+
+script:
+  care_select_alert:
+    alias: "Care Select Alert"
+    mode: single
+    fields:
+      alert_id:
+        required: true
+        selector:
+          select:
+            options:
+              - alert_001
+              - alert_002
+              - alert_003
+              - alert_004
+              - alert_005
+              - alert_006
+    sequence:
+      - condition: template
+        value_template: "{{ alert_id in state_attr('input_select.care_selected_alert', 'options') }}"
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.care_selected_alert
+        data:
+          option: "{{ alert_id }}"
+
+  care_clear_selected_alert:
+    alias: "Care Clear Selected Alert"
+    mode: single
+    sequence:
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.care_selected_alert
+        data:
+          option: none
+
+  care_acknowledge_selected_alert:
+    alias: "Care Acknowledge Selected Alert"
+    mode: single
+    sequence:
+      - variables:
+          selected: "{{ states('input_select.care_selected_alert') }}"
+          status_entity: "input_select.care_{{ states('input_select.care_selected_alert') }}_status"
+      - condition: template
+        value_template: "{{ selected != 'none' and states(status_entity) == 'NEW' }}"
+      - service: input_select.select_option
+        data:
+          entity_id: "{{ status_entity }}"
+          option: ACKNOWLEDGED
+
+  care_escalate_selected_alert:
+    alias: "Care Escalate Selected Alert"
+    mode: single
+    fields:
+      recipient:
+        required: false
+        selector:
+          text:
+    sequence:
+      - variables:
+          selected: "{{ states('input_select.care_selected_alert') }}"
+          selected_recipient: >
+            {{ recipient | default(states('input_select.care_escalation_recipient'), true) }}
+          status_entity: "input_select.care_{{ states('input_select.care_selected_alert') }}_status"
+          escalation_entity: "input_text.care_{{ states('input_select.care_selected_alert') }}_escalated_to"
+      - condition: template
+        value_template: >
+          {{ selected != 'none'
+             and selected_recipient != 'none'
+             and selected_recipient | length > 0
+             and states(status_entity) in ['NEW', 'ACKNOWLEDGED'] }}
+      - service: input_text.set_value
+        data:
+          entity_id: "{{ escalation_entity }}"
+          value: "{{ selected_recipient }}"
+      - service: input_select.select_option
+        data:
+          entity_id: "{{ status_entity }}"
+          option: ESCALATED
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.care_escalation_recipient
+        data:
+          option: none
+
+  care_resolve_selected_alert:
+    alias: "Care Resolve Selected Alert"
+    mode: single
+    sequence:
+      - variables:
+          selected: "{{ states('input_select.care_selected_alert') }}"
+          status_entity: "input_select.care_{{ states('input_select.care_selected_alert') }}_status"
+      - condition: template
+        value_template: "{{ selected != 'none' and states(status_entity) != 'RESOLVED' }}"
+      - service: input_select.select_option
+        data:
+          entity_id: "{{ status_entity }}"
+          option: RESOLVED
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.care_selected_alert
+        data:
+          option: none
+
+  care_reset_mock_alerts:
+    alias: "Care Reset Mock Alerts"
+    mode: single
+    sequence:
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.care_selected_alert
+        data:
+          option: none
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.care_escalation_recipient
+        data:
+          option: none
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.care_alert_001_status
+        data:
+          option: NEW
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.care_alert_002_status
+        data:
+          option: NEW
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.care_alert_003_status
+        data:
+          option: ACKNOWLEDGED
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.care_alert_004_status
+        data:
+          option: NEW
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.care_alert_005_status
+        data:
+          option: ESCALATED
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.care_alert_006_status
+        data:
+          option: NEW
+      - service: input_text.set_value
+        target:
+          entity_id:
+            - input_text.care_alert_001_escalated_to
+            - input_text.care_alert_002_escalated_to
+            - input_text.care_alert_003_escalated_to
+            - input_text.care_alert_004_escalated_to
+            - input_text.care_alert_006_escalated_to
+        data:
+          value: ""
+      - service: input_text.set_value
+        target:
+          entity_id: input_text.care_alert_005_escalated_to
+        data:
+          value: "Aisha Patel - Nurse Lead"
+      - service: input_datetime.set_datetime
+        target:
+          entity_id: input_datetime.care_alert_001_timestamp
+        data:
+          datetime: "{{ (now() - timedelta(minutes=4)).strftime('%Y-%m-%d %H:%M:%S') }}"
+      - service: input_datetime.set_datetime
+        target:
+          entity_id: input_datetime.care_alert_002_timestamp
+        data:
+          datetime: "{{ (now() - timedelta(minutes=9)).strftime('%Y-%m-%d %H:%M:%S') }}"
+      - service: input_datetime.set_datetime
+        target:
+          entity_id: input_datetime.care_alert_003_timestamp
+        data:
+          datetime: "{{ (now() - timedelta(minutes=14)).strftime('%Y-%m-%d %H:%M:%S') }}"
+      - service: input_datetime.set_datetime
+        target:
+          entity_id: input_datetime.care_alert_004_timestamp
+        data:
+          datetime: "{{ (now() - timedelta(minutes=22)).strftime('%Y-%m-%d %H:%M:%S') }}"
+      - service: input_datetime.set_datetime
+        target:
+          entity_id: input_datetime.care_alert_005_timestamp
+        data:
+          datetime: "{{ (now() - timedelta(minutes=31)).strftime('%Y-%m-%d %H:%M:%S') }}"
+      - service: input_datetime.set_datetime
+        target:
+          entity_id: input_datetime.care_alert_006_timestamp
+        data:
+          datetime: "{{ (now() - timedelta(minutes=2)).strftime('%Y-%m-%d %H:%M:%S') }}"
+
+automation:
+  - alias: "Care Mock Alerts Initialize Timestamps"
+    id: care_mock_alerts_initialize_timestamps
+    mode: single
+    trigger:
+      - platform: homeassistant
+        event: start
+    action:
+      - service: script.care_reset_mock_alerts

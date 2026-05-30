@@ -1,0 +1,712 @@
+title: Care Alert Command
+views:
+  - title: Alerts
+    path: care-alerts
+    icon: mdi:shield-alert
+    type: sections
+    max_columns: 2
+    sections:
+      - type: grid
+        cards:
+          - type: custom:mushroom-template-card
+            primary: Rosewood Care
+            secondary: >
+              {{ states('sensor.care_active_alert_count') }} active alerts -
+              {{ states('sensor.care_critical_alert_count') }} critical
+            icon: mdi:home-heart
+            icon_color: red
+            layout: horizontal
+            fill_container: true
+            card_mod:
+              style: |
+                ha-card {
+                  min-height: 92px;
+                  padding: 12px;
+                  background: linear-gradient(135deg, #16191f 0%, #111318 100%);
+                  border: 1px solid rgba(255,255,255,0.08);
+                }
+
+          - type: grid
+            columns: 3
+            square: false
+            card_mod:
+              style: |
+                :host {
+                  position: sticky;
+                  bottom: 0;
+                  z-index: 20;
+                  display: block;
+                  padding: 8px 0;
+                  background: linear-gradient(180deg, rgba(13,15,20,0.15) 0%, #0d0f14 32%);
+                }
+            cards:
+              - type: custom:mushroom-template-card
+                primary: "{{ states('sensor.care_active_alert_count') }}"
+                secondary: Active
+                icon: mdi:bell-ring
+                icon_color: blue
+                layout: vertical
+                card_mod:
+                  style: &summary-card-style |
+                    ha-card {
+                      min-height: 94px;
+                      background: #16191f;
+                      border: 1px solid rgba(255,255,255,0.08);
+                    }
+              - type: custom:mushroom-template-card
+                primary: "{{ states('sensor.care_critical_alert_count') }}"
+                secondary: Critical
+                icon: mdi:alert-octagon
+                icon_color: red
+                layout: vertical
+                card_mod:
+                  style: *summary-card-style
+              - type: custom:mushroom-template-card
+                primary: >
+                  {% set status = states('sensor.care_selected_alert_status') %}
+                  {% if status == 'ACKNOWLEDGED' %}
+                    ACK
+                  {% elif status == 'ESCALATED' %}
+                    ESC
+                  {% elif status == 'RESOLVED' %}
+                    DONE
+                  {% else %}
+                    {{ status | upper }}
+                  {% endif %}
+                secondary: Selected
+                icon: mdi:cursor-default-click
+                icon_color: >
+                  {% if is_state('input_select.care_selected_alert', 'none') %}
+                    disabled
+                  {% else %}
+                    green
+                  {% endif %}
+                layout: vertical
+                card_mod:
+                  style: *summary-card-style
+
+          - type: custom:button-card
+            name: Active Resident Alerts
+            label: On-shift triage
+            show_label: true
+            show_icon: false
+            styles:
+              card:
+                - height: 54px
+                - padding: 0 18px
+                - background: transparent
+                - box-shadow: none
+                - border: none
+              name:
+                - justify-self: start
+                - font-size: 20px
+                - font-weight: 700
+                - color: "#f7f8fb"
+              label:
+                - justify-self: start
+                - font-size: 13px
+                - color: "#9ba3af"
+
+          - type: vertical-stack
+            cards:
+              - type: custom:button-card
+                template: care_alert_card
+                entity: sensor.care_alert_001
+                variables:
+                  alert_id: alert_001
+              - type: custom:button-card
+                template: care_alert_card
+                entity: sensor.care_alert_006
+                variables:
+                  alert_id: alert_006
+              - type: custom:button-card
+                template: care_alert_card
+                entity: sensor.care_alert_002
+                variables:
+                  alert_id: alert_002
+              - type: custom:button-card
+                template: care_alert_card
+                entity: sensor.care_alert_003
+                variables:
+                  alert_id: alert_003
+              - type: custom:button-card
+                template: care_alert_card
+                entity: sensor.care_alert_004
+                variables:
+                  alert_id: alert_004
+              - type: custom:button-card
+                template: care_alert_card
+                entity: sensor.care_alert_005
+                variables:
+                  alert_id: alert_005
+
+          - type: grid
+            columns: 3
+            square: false
+            cards:
+              - type: custom:button-card
+                template: care_action_button
+                name: Acknowledge
+                icon: mdi:check-circle
+                variables:
+                  active_color: "#2563eb"
+                  action_kind: acknowledge
+                tap_action:
+                  action: call-service
+                  service: script.care_acknowledge_selected_alert
+              - type: custom:button-card
+                template: care_action_button
+                name: Escalate
+                icon: mdi:account-arrow-up
+                variables:
+                  active_color: "#f59e0b"
+                  action_kind: escalate
+                tap_action:
+                  action: fire-dom-event
+                  browser_mod:
+                    service: browser_mod.popup
+                    data:
+                      title: Escalate alert
+                      content:
+                        type: vertical-stack
+                        cards:
+                          - type: custom:mushroom-template-card
+                            primary: >
+                              {{ state_attr('sensor.care_' ~ states('input_select.care_selected_alert'), 'resident') }}
+                            secondary: >
+                              Room {{ state_attr('sensor.care_' ~ states('input_select.care_selected_alert'), 'room') }} -
+                              {{ state_attr('sensor.care_' ~ states('input_select.care_selected_alert'), 'alert_type') }}
+                            icon: mdi:alert-circle
+                            icon_color: orange
+                          - type: grid
+                            columns: 1
+                            square: false
+                            cards:
+                              - type: custom:button-card
+                                name: Aisha Patel
+                                label: Nurse Lead
+                                template: care_staff_select_button
+                                tap_action:
+                                  action: fire-dom-event
+                                  browser_mod:
+                                    service: browser_mod.popup
+                                    data:
+                                      title: Confirm escalation
+                                      content:
+                                        type: vertical-stack
+                                        cards:
+                                          - type: custom:mushroom-template-card
+                                            primary: Aisha Patel
+                                            secondary: Nurse Lead
+                                            icon: mdi:account-check
+                                            icon_color: orange
+                                          - type: horizontal-stack
+                                            cards:
+                                              - type: custom:button-card
+                                                name: Cancel
+                                                icon: mdi:close
+                                                template: care_modal_cancel_button
+                                              - type: custom:button-card
+                                                name: Confirm
+                                                icon: mdi:send
+                                                template: care_modal_confirm_button
+                                                tap_action:
+                                                  action: fire-dom-event
+                                                  browser_mod:
+                                                    service: browser_mod.sequence
+                                                    data:
+                                                      sequence:
+                                                        - service: script.care_escalate_selected_alert
+                                                          data:
+                                                            recipient: Aisha Patel - Nurse Lead
+                                                        - service: browser_mod.close_popup
+                              - type: custom:button-card
+                                name: Ben Carter
+                                label: Floor Nurse
+                                template: care_staff_select_button
+                                tap_action:
+                                  action: fire-dom-event
+                                  browser_mod:
+                                    service: browser_mod.popup
+                                    data:
+                                      title: Confirm escalation
+                                      content:
+                                        type: vertical-stack
+                                        cards:
+                                          - type: custom:mushroom-template-card
+                                            primary: Ben Carter
+                                            secondary: Floor Nurse
+                                            icon: mdi:account-check
+                                            icon_color: orange
+                                          - type: horizontal-stack
+                                            cards:
+                                              - type: custom:button-card
+                                                name: Cancel
+                                                icon: mdi:close
+                                                template: care_modal_cancel_button
+                                              - type: custom:button-card
+                                                name: Confirm
+                                                icon: mdi:send
+                                                template: care_modal_confirm_button
+                                                tap_action:
+                                                  action: fire-dom-event
+                                                  browser_mod:
+                                                    service: browser_mod.sequence
+                                                    data:
+                                                      sequence:
+                                                        - service: script.care_escalate_selected_alert
+                                                          data:
+                                                            recipient: Ben Carter - Floor Nurse
+                                                        - service: browser_mod.close_popup
+                              - type: custom:button-card
+                                name: Mara Singh
+                                label: Care Assistant
+                                template: care_staff_select_button
+                                tap_action:
+                                  action: fire-dom-event
+                                  browser_mod:
+                                    service: browser_mod.popup
+                                    data:
+                                      title: Confirm escalation
+                                      content:
+                                        type: vertical-stack
+                                        cards:
+                                          - type: custom:mushroom-template-card
+                                            primary: Mara Singh
+                                            secondary: Care Assistant
+                                            icon: mdi:account-check
+                                            icon_color: orange
+                                          - type: horizontal-stack
+                                            cards:
+                                              - type: custom:button-card
+                                                name: Cancel
+                                                icon: mdi:close
+                                                template: care_modal_cancel_button
+                                              - type: custom:button-card
+                                                name: Confirm
+                                                icon: mdi:send
+                                                template: care_modal_confirm_button
+                                                tap_action:
+                                                  action: fire-dom-event
+                                                  browser_mod:
+                                                    service: browser_mod.sequence
+                                                    data:
+                                                      sequence:
+                                                        - service: script.care_escalate_selected_alert
+                                                          data:
+                                                            recipient: Mara Singh - Care Assistant
+                                                        - service: browser_mod.close_popup
+                              - type: custom:button-card
+                                name: Owen Reed
+                                label: Facilities
+                                template: care_staff_select_button
+                                tap_action:
+                                  action: fire-dom-event
+                                  browser_mod:
+                                    service: browser_mod.popup
+                                    data:
+                                      title: Confirm escalation
+                                      content:
+                                        type: vertical-stack
+                                        cards:
+                                          - type: custom:mushroom-template-card
+                                            primary: Owen Reed
+                                            secondary: Facilities
+                                            icon: mdi:account-check
+                                            icon_color: orange
+                                          - type: horizontal-stack
+                                            cards:
+                                              - type: custom:button-card
+                                                name: Cancel
+                                                icon: mdi:close
+                                                template: care_modal_cancel_button
+                                              - type: custom:button-card
+                                                name: Confirm
+                                                icon: mdi:send
+                                                template: care_modal_confirm_button
+                                                tap_action:
+                                                  action: fire-dom-event
+                                                  browser_mod:
+                                                    service: browser_mod.sequence
+                                                    data:
+                                                      sequence:
+                                                        - service: script.care_escalate_selected_alert
+                                                          data:
+                                                            recipient: Owen Reed - Facilities
+                                                        - service: browser_mod.close_popup
+                          - type: custom:button-card
+                            name: Cancel
+                            icon: mdi:close
+                            template: care_modal_cancel_button
+              - type: custom:button-card
+                template: care_action_button
+                name: Resolve
+                icon: mdi:check-all
+                variables:
+                  active_color: "#16a34a"
+                  action_kind: resolve
+                tap_action:
+                  action: call-service
+                  service: script.care_resolve_selected_alert
+
+      - type: grid
+        cards:
+          - type: custom:mushroom-template-card
+            primary: Selected alert detail
+            secondary: >
+              {% if is_state('input_select.care_selected_alert', 'none') %}
+                No alert selected
+              {% else %}
+                {{ states('input_select.care_selected_alert') | replace('_', ' ') | title }}
+              {% endif %}
+            icon: mdi:clipboard-pulse
+            icon_color: >
+              {% if is_state('input_select.care_selected_alert', 'none') %}
+                disabled
+              {% else %}
+                blue
+              {% endif %}
+            card_mod:
+              style: |
+                ha-card {
+                  min-height: 88px;
+                  background: #16191f;
+                  border: 1px solid rgba(255,255,255,0.08);
+                }
+
+          - type: conditional
+            conditions:
+              - entity: input_select.care_selected_alert
+                state_not: none
+            card:
+              type: entities
+              title: Current Selection
+              show_header_toggle: false
+              entities:
+                - entity: sensor.care_selected_alert_status
+                  name: Status
+                - entity: input_select.care_selected_alert
+                  name: Selected alert ID
+              card_mod:
+                style: |
+                  ha-card {
+                    background: #16191f;
+                    border: 1px solid rgba(255,255,255,0.08);
+                  }
+button_card_templates:
+  care_alert_card:
+    show_icon: false
+    show_label: true
+    show_state: false
+    tap_action:
+      action: call-service
+      service: script.care_select_alert
+      data:
+        alert_id: "[[[ return variables.alert_id; ]]]"
+    name: >
+      [[[
+        return entity.attributes.resident;
+      ]]]
+    label: >
+      [[[
+        return entity.attributes.alert_type;
+      ]]]
+    custom_fields:
+      room: >
+        [[[
+          return `Room ${entity.attributes.room}`;
+        ]]]
+      priority: >
+        [[[
+          return entity.attributes.priority;
+        ]]]
+      status: >
+        [[[
+          return entity.state;
+        ]]]
+      elapsed: >
+        [[[
+          const tsEntity = entity.attributes.timestamp_entity;
+          const ts = states[tsEntity]?.state;
+          if (!ts || ts === 'unknown') return 'time unavailable';
+          const then = new Date(ts.replace(' ', 'T'));
+          const mins = Math.max(0, Math.round((Date.now() - then.getTime()) / 60000));
+          if (mins < 1) return 'just now';
+          if (mins < 60) return `${mins} min ago`;
+          const hours = Math.round(mins / 60);
+          return `${hours} hr ago`;
+        ]]]
+      absolute: >
+        [[[
+          const tsEntity = entity.attributes.timestamp_entity;
+          const ts = states[tsEntity]?.state;
+          if (!ts || ts === 'unknown') return '';
+          const then = new Date(ts.replace(' ', 'T'));
+          return then.toLocaleString([], {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        ]]]
+      escalated: >
+        [[[
+          const person = entity.attributes.escalated_to;
+          return person ? `Escalated to ${person}` : '';
+        ]]]
+    styles:
+      card:
+        - display: >
+            [[[
+              return entity.state === 'RESOLVED' ? 'none' : 'grid';
+            ]]]
+        - min-height: 108px
+        - padding: 16px
+        - margin: 0 0 10px 0
+        - border-radius: 8px
+        - background: >
+            [[[
+              const selected = states['input_select.care_selected_alert'].state === variables.alert_id;
+              return selected ? '#1d2430' : '#16191f';
+            ]]]
+        - border: >
+            [[[
+              const selected = states['input_select.care_selected_alert'].state === variables.alert_id;
+              if (selected) return '2px solid #60a5fa';
+              const p = entity.attributes.priority;
+              if (p === 'Critical') return '1px solid rgba(239,68,68,0.55)';
+              if (p === 'High') return '1px solid rgba(245,158,11,0.45)';
+              return '1px solid rgba(255,255,255,0.08)';
+            ]]]
+        - box-shadow: >
+            [[[
+              const selected = states['input_select.care_selected_alert'].state === variables.alert_id;
+              return selected ? '0 0 0 3px rgba(96,165,250,0.18)' : 'none';
+            ]]]
+      grid:
+        - grid-template-areas: >
+            [[[
+              return window.innerWidth < 480
+                ? '"status elapsed" "n n" "room priority" "l l" "absolute absolute" "escalated escalated"'
+                : '"n status" "room priority" "l elapsed" "absolute absolute" "escalated escalated"';
+            ]]]
+        - grid-template-columns: >
+            [[[
+              return window.innerWidth < 480 ? '1fr auto' : '1fr auto';
+            ]]]
+        - grid-template-rows: min-content min-content min-content min-content min-content min-content
+        - row-gap: 8px
+      name:
+        - justify-self: start
+        - align-self: center
+        - font-size: >
+            [[[
+              return window.innerWidth < 480 ? '16px' : '18px';
+            ]]]
+        - font-weight: 700
+        - color: "#f8fafc"
+        - white-space: normal
+        - line-height: 1.2
+      label:
+        - justify-self: start
+        - font-size: >
+            [[[
+              return window.innerWidth < 480 ? '12px' : '13px';
+            ]]]
+        - color: "#aab2bf"
+        - white-space: normal
+        - line-height: 1.25
+      custom_fields:
+        status:
+          - justify-self: >
+              [[[
+                return window.innerWidth < 480 ? 'start' : 'end';
+              ]]]
+          - align-self: center
+          - padding: 5px 9px
+          - border-radius: 999px
+          - font-size: 11px
+          - font-weight: 800
+          - letter-spacing: 0
+          - color: "#111318"
+          - background: >
+              [[[
+                if (entity.state === 'NEW') return '#f87171';
+                if (entity.state === 'ACKNOWLEDGED') return '#60a5fa';
+                if (entity.state === 'ESCALATED') return '#f59e0b';
+                return '#34d399';
+              ]]]
+        room:
+          - justify-self: start
+          - padding: 4px 8px
+          - border-radius: 999px
+          - font-size: 12px
+          - font-weight: 700
+          - color: "#dbeafe"
+          - background: "rgba(96,165,250,0.14)"
+        priority:
+          - justify-self: >
+              [[[
+                return window.innerWidth < 480 ? 'end' : 'start';
+              ]]]
+          - padding: 4px 8px
+          - border-radius: 999px
+          - font-size: 12px
+          - font-weight: 800
+          - color: "#111318"
+          - background: >
+              [[[
+                const p = entity.attributes.priority;
+                if (p === 'Critical') return '#ef4444';
+                if (p === 'High') return '#f59e0b';
+                if (p === 'Medium') return '#facc15';
+                return '#60a5fa';
+              ]]]
+        elapsed:
+          - justify-self: end
+          - font-size: 13px
+          - color: "#d1d5db"
+        absolute:
+          - justify-self: start
+          - font-size: 11px
+          - color: "#8f98a6"
+        escalated:
+          - justify-self: start
+          - min-height: 16px
+          - font-size: 12px
+          - color: "#fbbf24"
+
+  care_action_button:
+    show_icon: true
+    show_name: true
+    styles:
+      card:
+        - height: >
+            [[[
+              return window.innerWidth < 480 ? '64px' : '56px';
+            ]]]
+        - border-radius: 8px
+        - background: >
+            [[[
+              const selected = states['input_select.care_selected_alert']?.state || 'none';
+              const status = states['sensor.care_selected_alert_status']?.state || 'none';
+              const disabled =
+                selected === 'none' ||
+                (variables.action_kind === 'acknowledge' && status !== 'NEW') ||
+                (variables.action_kind === 'escalate' && !['NEW', 'ACKNOWLEDGED'].includes(status)) ||
+                (variables.action_kind === 'resolve' && status === 'RESOLVED');
+              return disabled ? '#242832' : variables.active_color;
+            ]]]
+        - opacity: >
+            [[[
+              const selected = states['input_select.care_selected_alert']?.state || 'none';
+              const status = states['sensor.care_selected_alert_status']?.state || 'none';
+              const disabled =
+                selected === 'none' ||
+                (variables.action_kind === 'acknowledge' && status !== 'NEW') ||
+                (variables.action_kind === 'escalate' && !['NEW', 'ACKNOWLEDGED'].includes(status)) ||
+                (variables.action_kind === 'resolve' && status === 'RESOLVED');
+              return disabled ? '0.3' : '1';
+            ]]]
+        - pointer-events: >
+            [[[
+              const selected = states['input_select.care_selected_alert']?.state || 'none';
+              const status = states['sensor.care_selected_alert_status']?.state || 'none';
+              const disabled =
+                selected === 'none' ||
+                (variables.action_kind === 'acknowledge' && status !== 'NEW') ||
+                (variables.action_kind === 'escalate' && !['NEW', 'ACKNOWLEDGED'].includes(status)) ||
+                (variables.action_kind === 'resolve' && status === 'RESOLVED');
+              return disabled ? 'none' : 'auto';
+            ]]]
+      grid:
+        - grid-template-areas: >
+            [[[
+              return window.innerWidth < 480 ? '"i" "n"' : '"i n"';
+            ]]]
+        - grid-template-columns: >
+            [[[
+              return window.innerWidth < 480 ? '1fr' : '22px 1fr';
+            ]]]
+        - grid-template-rows: >
+            [[[
+              return window.innerWidth < 480 ? '24px 1fr' : '1fr';
+            ]]]
+      icon:
+        - justify-self: center
+        - width: >
+            [[[
+              return window.innerWidth < 480 ? '18px' : '20px';
+            ]]]
+        - color: "#f8fafc"
+      name:
+        - justify-self: center
+        - font-size: >
+            [[[
+              return window.innerWidth < 480 ? '11px' : '14px';
+            ]]]
+        - font-weight: 700
+        - color: "#f8fafc"
+        - white-space: normal
+        - line-height: 1.1
+        - text-align: center
+
+  care_staff_select_button:
+    show_icon: true
+    show_name: true
+    show_label: true
+    icon: mdi:account
+    styles:
+      card:
+        - height: 58px
+        - padding: 8px 12px
+        - border-radius: 8px
+        - background: "#1d2430"
+        - border: 1px solid rgba(255,255,255,0.08)
+      grid:
+        - grid-template-areas: '"i n" "i l"'
+        - grid-template-columns: 34px 1fr
+      icon:
+        - width: 22px
+        - color: "#60a5fa"
+      name:
+        - justify-self: start
+        - font-size: 15px
+        - font-weight: 700
+        - color: "#f8fafc"
+      label:
+        - justify-self: start
+        - font-size: 12px
+        - color: "#aab2bf"
+
+  care_modal_cancel_button:
+    show_icon: true
+    show_name: true
+    tap_action:
+      action: fire-dom-event
+      browser_mod:
+        service: browser_mod.close_popup
+    styles:
+      card:
+        - height: 48px
+        - border-radius: 8px
+        - background: "#242832"
+      icon:
+        - color: "#f8fafc"
+      name:
+        - color: "#f8fafc"
+        - font-weight: 700
+
+  care_modal_confirm_button:
+    show_icon: true
+    show_name: true
+    styles:
+      card:
+        - height: 48px
+        - border-radius: 8px
+        - background: "#f59e0b"
+      icon:
+        - color: "#111318"
+      name:
+        - color: "#111318"
+        - font-weight: 800
