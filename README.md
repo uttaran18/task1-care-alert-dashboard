@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Care Alert Dashboard - Task 1
 
 This folder contains a complete local Home Assistant dashboard package for Task 1 of the technical assessment.
@@ -117,3 +118,7 @@ lovelace:
 ## AI Disclosure
 
 AI assistance was used to draft and structure this assessment implementation. All architecture decisions should be reviewed and understood before submission.
+=======
+# qingping_mqtt_sensor
+Custom Home Assistant integration for Qingping sensor data via local MQTT, with UI config flow, dynamic entities, availability handling, and validation docs.
+>>>>>>> d6b7a83f69c9b9b8392cb5ec0ebb450ceb7aa27c
