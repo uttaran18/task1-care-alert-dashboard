@@ -119,7 +119,3 @@ lovelace:
 ## AI Disclosure
 
 AI assistance was used to draft and structure this assessment implementation.
-=======
-# qingping_mqtt_sensor
-Custom Home Assistant integration for Qingping sensor data via local MQTT, with UI config flow, dynamic entities, availability handling, and validation docs.
->>>>>>> d6b7a83f69c9b9b8392cb5ec0ebb450ceb7aa27c
